@@ -5,11 +5,18 @@ from collections import defaultdict
 from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(format='%(filename)s %(funcName)s %(asctime)s %(message)s', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(
+    format="%(filename)s %(funcName)s %(asctime)s %(message)s",
+    encoding="utf-8",
+    level=logging.INFO,
+)
 
 
-def main():
+def main() -> None:
     """
+    Main function to orchestrate the parsing of vote data and generation of reports.
+
+    It defines the input CSV file paths and calls the primary processing function.
     """
     try:
         bills_csv = "./files/in/bills.csv"
@@ -32,13 +39,20 @@ def _create_results_and_save_csv(
     legislators_csv_filename: str,
     votes_csv_filename: str,
     vote_results_csv_filename: str,
-):
+) -> None:
     """
+    Orchestrates the generation of legislator and bill analysis reports and saves them to CSV files.
+
+    Args:
+        bills_csv_filename: Path to the bills CSV file.
+        legislators_csv_filename: Path to the legislators CSV file.
+        votes_csv_filename: Path to the votes CSV file.
+        vote_results_csv_filename: Path to the vote_results CSV file.
     """
     try:
         legislator_summary = _legislator_support_oppose(
             legislators_csv_filename=legislators_csv_filename,
-            votes_result_csv_filename=vote_results_csv_filename,
+            vote_results_csv_filename=vote_results_csv_filename, # Corrected parameter name
         )
         output_folder = "./files/out"
         output_filename = os.path.join(
@@ -59,14 +73,12 @@ def _create_results_and_save_csv(
         logger.info(
             "Bill vote and sponsor analysis saved to %s", output_bill_analysis_filename
         )
-    except Exception:
-        logger.exception("Exception raised in _create_results_and_save_csv.")
+    except Exception as e:
+        logger.exception("Exception raised in _create_results_and_save_csv: %s", e)
         raise
 
 
-def _save_results_to_csv(
-    data_to_save: Dict[str, Dict[str, Any]], output_filename: str
-):
+def _save_results_to_csv(data_to_save: Dict[str, Dict[str, Any]], output_filename: str):
     """
     Saves a dictionary of a CSV file. Each key-value pair in the outer dictionary
     is not directly used in the CSV structure, but the inner dictionaries are
@@ -97,15 +109,12 @@ def _save_results_to_csv(
                 writer.writerow(row_dict)
 
     except Exception:
-        logger.exception(
-            "An unexpected error occurred while writing data to CSV %s",
-            output_filename,
-        )
+        logger.exception("An unexpected error occurred while writing data to CSV %s.", output_filename)
         raise
 
 
 def _legislator_support_oppose(
-    legislators_csv_filename: str, votes_result_csv_filename: str
+    legislators_csv_filename: str, vote_results_csv_filename: str
 ) -> Dict[str, Dict[str, Any]]:
     """
     Calculates the number of bills each legislator supported (voted Yea) and
@@ -127,7 +136,7 @@ def _legislator_support_oppose(
 
     try:
         legislators_data = _parse_csv(filename=legislators_csv_filename)
-        vote_results_data = _parse_csv(filename=votes_result_csv_filename)
+        vote_results_data = _parse_csv(filename=vote_results_csv_filename)
         legislators_support_oppose_count = defaultdict(dict)
 
         for vote_result_id, vote_info in vote_results_data.items():
@@ -186,9 +195,7 @@ def _legislator_support_oppose(
         return legislators_support_oppose_count
 
     except Exception:
-        logger.error(
-            "Error during legislator support/oppose count calculation: %s", e, exc_info=True
-        )
+        logger.exception("Error during legislator support/oppose count calculation.")
         raise
 
 
@@ -319,7 +326,7 @@ def _parse_csv(filename: str) -> Dict[str, Dict[str, Any]] | Dict:
         raise
 
     except Exception:
-        logger.exception("An error occurred while parsing %s", filename)
+        logger.exception("An error occurred while parsing %s.", filename)
         raise
 
     return data_dict
